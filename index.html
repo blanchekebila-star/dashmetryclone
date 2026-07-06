@@ -1,0 +1,608 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DASH METRY CLONE</title>
+    <style>
+        /* ===== RESET & BASE ===== */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            height: 100vh;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background: linear-gradient(135deg, #0b0b16 0%, #111125 50%, #17173a 100%);
+            color: #fff;
+            position: relative;
+        }
+
+        /* ===== CONTENEURS PRINCIPAUX ===== */
+        .container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 2.5rem;
+            padding: 1.5rem;
+            width: 100%;
+        }
+
+        .screen-hidden {
+            display: none !important;
+        }
+
+        /* ===== NOTIFICATION FLUSH ===== */
+        #gamepadToast {
+            position: absolute;
+            top: 20px;
+            background: rgba(56, 239, 125, 0.9);
+            color: #000;
+            padding: 0.8rem 1.5rem;
+            border-radius: 30px;
+            font-weight: bold;
+            text-transform: uppercase;
+            font-size: 0.9rem;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.3);
+            transform: translateY(-100px);
+            transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            z-index: 999;
+        }
+
+        #gamepadToast.show {
+            transform: translateY(0);
+        }
+
+        /* ===== MENU PRINCIPAL ===== */
+        .title {
+            font-size: 4rem;
+            font-weight: 900;
+            letter-spacing: 0.3rem;
+            text-transform: uppercase;
+            text-align: center;
+            background: linear-gradient(135deg, #00f2fe 0%, #4facfe 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            filter: drop-shadow(0 4px 10px rgba(0, 242, 254, 0.3));
+            animation: fadeInDown 0.8s ease-out;
+        }
+
+        .play-btn {
+            width: 180px;
+            height: 180px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+            border: none;
+            cursor: pointer;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            box-shadow: 0 10px 30px rgba(56, 239, 125, 0.4);
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            animation: fadeInUp 0.8s ease-out;
+        }
+
+        .play-btn:hover {
+            transform: scale(1.1);
+            box-shadow: 0 15px 40px rgba(56, 239, 125, 0.6);
+        }
+
+        .play-icon {
+            width: 0;
+            height: 0;
+            border-top: 25px solid transparent;
+            border-bottom: 25px solid transparent;
+            border-left: 45px solid #fff;
+            margin-left: 12px;
+        }
+
+        .secondary-buttons {
+            display: flex;
+            gap: 1.5rem;
+            animation: fadeIn 1s ease-out;
+        }
+
+        .secondary-btn {
+            padding: 0.8rem 2rem;
+            font-size: 1rem;
+            font-weight: 600;
+            letter-spacing: 0.1rem;
+            color: #fff;
+            background: rgba(255, 255, 255, 0.08);
+            border: 2px solid rgba(255, 255, 255, 0.15);
+            border-radius: 30px;
+            cursor: pointer;
+            backdrop-filter: blur(10px);
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+        }
+
+        .secondary-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+            border-color: rgba(255, 255, 255, 0.4);
+            transform: translateY(-2px);
+        }
+
+        /* ===== PANNEAUX INTERFACES (COMMUNS GARAGE & OPTIONS) ===== */
+        .panel-container {
+            width: 100%;
+            max-width: 600px;
+            background: rgba(0, 0, 0, 0.3);
+            border: 2px solid rgba(255, 255, 255, 0.08);
+            border-radius: 20px;
+            padding: 1.8rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.4);
+            animation: fadeIn 0.3s ease-out;
+        }
+
+        .panel-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid rgba(255, 255, 255, 0.05);
+            padding-bottom: 0.8rem;
+        }
+
+        .panel-title {
+            font-size: 2.2rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            background: linear-gradient(135deg, #00f2fe 0%, #4facfe 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        /* ===== DESIGN GARAGE ===== */
+        .preview-zone {
+            width: 100%;
+            height: 160px;
+            background: rgba(0, 0, 0, 0.4);
+            border: 2px solid rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            box-shadow: inset 0 0 20px rgba(0,0,0,0.6);
+        }
+
+        .vehicle-holder { width: 85px; height: 85px; }
+        .vehicle-holder svg { width: 100%; height: 100%; }
+
+        .mode-tabs { display: flex; gap: 0.3rem; justify-content: center; flex-wrap: wrap; }
+        .mode-tab {
+            padding: 0.5rem 0.9rem; font-size: 0.8rem; font-weight: 700; color: #aaa;
+            background: rgba(255, 255, 255, 0.05); border: 2px solid rgba(255, 255, 255, 0.1);
+            border-radius: 20px; cursor: pointer; transition: all 0.2s ease; text-transform: uppercase;
+        }
+        .mode-tab:hover { color: #fff; background: rgba(255, 255, 255, 0.1); }
+        .mode-tab.active { background: linear-gradient(135deg, #00f2fe 0%, #4facfe 100%); border-color: transparent; color: #000; }
+
+        .designs-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.8rem; padding: 0.6rem; background: rgba(0, 0, 0, 0.2); border-radius: 12px; }
+        .design-card { aspect-ratio: 1; background: rgba(255, 255, 255, 0.02); border: 2px solid rgba(255, 255, 255, 0.08); border-radius: 10px; cursor: pointer; display: flex; justify-content: center; align-items: center; padding: 8px; }
+        .design-card.selected { border-color: #38ef7d; background: rgba(56, 239, 125, 0.08); }
+        .design-card svg { width: 100%; height: 100%; }
+
+        .color-palette { display: flex; gap: 0.5rem; justify-content: center; }
+        .color-btn { width: 32px; height: 32px; border-radius: 50%; border: 3px solid rgba(0, 0, 0, 0.4); cursor: pointer; }
+        .color-btn.selected { border-color: #fff; transform: scale(1.1); }
+        .color-btn[data-color="red"] { background: #ff4757; }
+        .color-btn[data-color="orange"] { background: #ffa502; }
+        .color-btn[data-color="yellow"] { background: #ffd43b; }
+        .color-btn[data-color="green"] { background: #2ed573; }
+        .color-btn[data-color="blue"] { background: #1e90ff; }
+        .color-btn[data-color="indigo"] { background: #5352ed; }
+        .color-btn[data-color="violet"] { background: #a55eea; }
+
+        /* ===== DESIGN REGLAGES (OPTIONS) ===== */
+        .option-row { display: flex; flex-direction: column; gap: 0.5rem; }
+        .option-label { font-size: 0.95rem; font-weight: 700; text-transform: uppercase; color: #aaa; letter-spacing: 0.05rem; }
+        
+        .slider-container { display: flex; align-items: center; gap: 1rem; }
+        .volume-slider { flex: 1; -webkit-appearance: none; appearance: none; height: 6px; border-radius: 3px; background: rgba(255, 255, 255, 0.1); outline: none; cursor: pointer; }
+        .volume-slider::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 18px; height: 18px; border-radius: 50%; background: #4facfe; border: 2px solid #fff; cursor: pointer; }
+        .volume-value { font-size: 0.95rem; font-weight: bold; min-width: 45px; text-align: right; }
+
+        .btn-group { display: flex; gap: 0.4rem; background: rgba(0, 0, 0, 0.2); padding: 0.25rem; border-radius: 12px; }
+        .group-btn { flex: 1; padding: 0.6rem; font-size: 0.85rem; font-weight: 700; color: #666; background: transparent; border: none; border-radius: 8px; cursor: pointer; text-transform: uppercase; transition: all 0.2s; }
+        .group-btn.active { background: linear-gradient(135deg, #00f2fe 0%, #4facfe 100%); color: #000; }
+
+        /* Statut matériel manette */
+        .hardware-status {
+            padding: 0.8rem;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.9rem;
+        }
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-weight: bold;
+        }
+        .status-dot { width: 10px; height: 10px; border-radius: 50%; background: #ff4757; }
+        .status-dot.connected { background: #38ef7d; }
+
+        /* Bouton Mapping */
+        .mapping-btn {
+            background: rgba(255, 255, 255, 0.05);
+            border: 2px dashed rgba(255, 255, 255, 0.2);
+            color: #fff;
+            padding: 0.7rem;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: bold;
+            text-transform: uppercase;
+            font-size: 0.85rem;
+            transition: all 0.2s;
+        }
+        .mapping-btn:hover { background: rgba(255, 255, 255, 0.1); border-color: #4facfe; }
+        .mapping-btn.waiting { background: rgba(79, 172, 254, 0.2); border-color: #4facfe; color: #4facfe; animation: pulse 1s infinite alternate; }
+
+        @keyframes pulse { from { opacity: 0.6; } to { opacity: 1; } }
+        @keyframes fadeInDown { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    </style>
+</head>
+<body>
+
+    <div id="gamepadToast">🎮 Manette détectée !</div>
+
+    <div class="container" id="homeScreen">
+        <h1 class="title">DASH METRY CLONE</h1>
+        <button class="play-btn" id="playBtn">
+            <div class="play-icon"></div>
+        </button>
+        <div class="secondary-buttons">
+            <button class="secondary-btn" id="editorBtn">Éditeur</button>
+            <button class="secondary-btn" id="garageBtn">Garage</button>
+            <button class="secondary-btn" id="optionsBtn">Options</button>
+        </div>
+    </div>
+
+    <div class="container screen-hidden" id="garageScreen">
+        <div class="panel-container">
+            <div class="panel-header">
+                <h2 class="panel-title">Garage</h2>
+                <button class="secondary-btn" id="garageBackBtn" style="padding: 0.4rem 1.2rem; font-size: 0.85rem;">← Retour</button>
+            </div>
+            
+            <div class="preview-zone">
+                <div class="vehicle-holder" id="previewVehicle"></div>
+            </div>
+
+            <div class="mode-tabs">
+                <button class="mode-tab active" data-mode="cube">Cube</button>
+                <button class="mode-tab" data-mode="ship">Ship</button>
+                <button class="mode-tab" data-mode="wave">Wave</button>
+                <button class="mode-tab" data-mode="ball">Ball</button>
+                <button class="mode-tab" data-mode="spider">Spider</button>
+            </div>
+
+            <div class="designs-grid" id="designsGrid"></div>
+
+            <div class="color-palette">
+                <button class="color-btn" data-color="red"></button>
+                <button class="color-btn" data-color="orange"></button>
+                <button class="color-btn" data-color="yellow"></button>
+                <button class="color-btn selected" data-color="green"></button>
+                <button class="color-btn" data-color="blue"></button>
+                <button class="color-btn" data-color="indigo"></button>
+                <button class="color-btn" data-color="violet"></button>
+            </div>
+        </div>
+    </div>
+
+    <div class="container screen-hidden" id="optionsScreen">
+        <div class="panel-container">
+            <div class="panel-header">
+                <h2 class="panel-title">Options</h2>
+                <button class="secondary-btn" id="optionsBackBtn" style="padding: 0.4rem 1.2rem; font-size: 0.85rem;">← Retour</button>
+            </div>
+
+            <div class="option-row">
+                <div class="option-label">Musique</div>
+                <div class="slider-container">
+                    <input type="range" class="volume-slider" id="musicSlider" min="0" max="100" value="80">
+                    <span class="volume-value" id="musicValue">80%</span>
+                </div>
+            </div>
+
+            <div class="option-row">
+                <div class="option-label">Effets Sonores (SFX)</div>
+                <div class="slider-container">
+                    <input type="range" class="volume-slider" id="sfxSlider" min="0" max="100" value="70">
+                    <span class="volume-value" id="sfxValue">70%</span>
+                </div>
+            </div>
+
+            <div class="option-row">
+                <div class="option-label">Matériel</div>
+                <div class="hardware-status">
+                    <span id="gamepadName">Aucune manette trouvée</span>
+                    <div class="status-indicator">
+                        <div class="status-dot" id="statusDot"></div>
+                        <span id="statusText">OFFLINE</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="option-row">
+                <div class="option-label">Assigner Touche Saut</div>
+                <button class="mapping-btn" id="remapJumpBtn">Bouton actuel : Aucun</button>
+            </div>
+
+            <div class="option-row">
+                <div class="option-label">Qualité Graphique</div>
+                <div class="btn-group" id="qualityGroup">
+                    <button class="group-btn" data-value="low">Basse</button>
+                    <button class="group-btn active" data-value="high">Haute</button>
+                </div>
+            </div>
+
+            <div class="option-row">
+                <div class="option-label">Affichage</div>
+                <div class="btn-group" id="screenGroup">
+                    <button class="group-btn active" data-value="windowed">Fenêtré</button>
+                    <button class="group-btn" data-value="fullscreen">Plein Écran</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ==========================================
+        // ===== INITIALISATION SYSTÈME AUDIO =======
+        // ==========================================
+        let menuMusic = null; 
+
+        // PISTE 1 INTÉGRÉE ICI : Ton fichier de clic bouton !
+        let uiClickSound = new Audio('emilianodleon-button-ui-sound-effect-395762.mp3');
+
+        // Sécurité navigateur : activation au premier clic
+        function initAudioOnFirstClick() {
+            if (menuMusic) {
+                menuMusic.play().catch(e => console.log("Audio en attente..."));
+            }
+            window.removeEventListener('click', initAudioOnFirstClick);
+        }
+        window.addEventListener('click', initAudioOnFirstClick);
+
+        // Fonction pour lancer le bruitage
+        function playClickSFX() {
+            if (uiClickSound) {
+                uiClickSound.currentTime = 0;
+                uiClickSound.play().catch(e => {});
+            }
+        }
+
+        // ===== LOGIQUE SWITCH ECRANS =====
+        const homeScreen = document.getElementById('homeScreen');
+        const garageScreen = document.getElementById('garageScreen');
+        const optionsScreen = document.getElementById('optionsScreen');
+
+        document.getElementById('garageBtn').addEventListener('click', () => { playClickSFX(); homeScreen.classList.add('screen-hidden'); garageScreen.classList.remove('screen-hidden'); });
+        document.getElementById('optionsBtn').addEventListener('click', () => { playClickSFX(); homeScreen.classList.add('screen-hidden'); optionsScreen.classList.remove('screen-hidden'); });
+        document.getElementById('garageBackBtn').addEventListener('click', () => { playClickSFX(); garageScreen.classList.add('screen-hidden'); homeScreen.classList.remove('screen-hidden'); });
+        document.getElementById('optionsBackBtn').addEventListener('click', () => { playClickSFX(); optionsScreen.classList.add('screen-hidden'); homeScreen.classList.remove('screen-hidden'); });
+
+        document.getElementById('playBtn').addEventListener('click', () => { playClickSFX(); alert('Lancement !'); });
+        document.getElementById('editorBtn').addEventListener('click', () => { playClickSFX(); alert('Éditeur'); });
+
+        // ===== BANQUE DE GRAPHISMES SVG =====
+        const svgTemplates = {
+            cube: {
+                1: `<svg viewBox="0 0 100 100"><rect x="5" y="5" width="90" height="90" fill="var(--color)" stroke="#000" stroke-width="8" rx="6"/><rect x="22" y="22" width="56" height="56" fill="none" stroke="#fff" stroke-width="6"/><rect x="36" y="36" width="28" height="28" fill="#000"/></svg>`,
+                2: `<svg viewBox="0 0 100 100"><rect x="5" y="5" width="90" height="90" fill="var(--color)" stroke="#000" stroke-width="8" rx="6"/><rect x="22" y="25" width="20" height="25" rx="4" fill="#fff" stroke="#000" stroke-width="5"/><rect x="58" y="25" width="20" height="25" rx="4" fill="#fff" stroke="#000" stroke-width="5"/><circle cx="32" cy="37" r="4" fill="#000"/><circle cx="68" cy="37" r="4" fill="#000"/><path d="M25 70 Q50 85 75 70" stroke="#000" stroke-width="6" fill="none" stroke-linecap="round"/></svg>`,
+                3: `<svg viewBox="0 0 100 100"><rect x="5" y="5" width="90" height="90" fill="var(--color)" stroke="#000" stroke-width="8" rx="6"/><path d="M5 25 L95 25 M5 75 L95 75 M25 5 L25 95 M75 5 L75 95" stroke="#000" stroke-width="6"/><rect x="35" y="35" width="30" height="30" fill="#fff" stroke="#000" stroke-width="5"/></svg>`,
+                4: `<svg viewBox="0 0 100 100"><rect x="5" y="5" width="90" height="90" fill="var(--color)" stroke="#000" stroke-width="8" rx="6"/><path d="M15 15 L85 85 M85 15 L15 85" stroke="#fff" stroke-width="8" stroke-linecap="round"/><circle cx="50" cy="50" r="16" fill="#000" stroke="#fff" stroke-width="5"/></svg>`
+            },
+            ship: {
+                1: `<svg viewBox="0 0 100 100"><path d="M10 45 L30 20 L75 35 L95 50 L75 65 L30 80 L10 55 Z" fill="var(--color)" stroke="#000" stroke-width="7"/><rect x="40" y="38" width="25" height="15" rx="3" fill="#fff" stroke="#000" stroke-width="4"/><path d="M12 47 L22 47 L22 53 L12 53 Z" fill="#ff4757" stroke="#000" stroke-width="3"/></svg>`,
+                2: `<svg viewBox="0 0 100 100"><path d="M15 35 L75 35 L90 50 L75 65 L15 65 Z" fill="var(--color)" stroke="#000" stroke-width="7"/><circle cx="45" cy="50" r="14" fill="#fff" stroke="#000" stroke-width="5"/></svg>`,
+                3: `<svg viewBox="0 0 100 100"><path d="M10 50 L45 20 L90 50 L45 80 Z" fill="var(--color)" stroke="#000" stroke-width="7"/><circle cx="45" cy="50" r="12" fill="#000" stroke="#fff" stroke-width="3"/></svg>`,
+                4: `<svg viewBox="0 0 100 100"><path d="M15 30 L60 30 L85 50 L60 70 L15 70 Z" fill="var(--color)" stroke="#000" stroke-width="7"/><rect x="35" y="42" width="22" height="16" fill="#fff" stroke="#000" stroke-width="4"/></svg>`
+            },
+            wave: {
+                1: `<svg viewBox="0 0 100 100"><path d="M10 50 L60 15 L90 50 L60 85 Z" fill="var(--color)" stroke="#000" stroke-width="8"/><path d="M45 50 L60 28 L75 50 L60 72 Z" fill="#fff" stroke="#000" stroke-width="4"/></svg>`,
+                2: `<svg viewBox="0 0 100 100"><path d="M10 50 L60 15 L90 50 L60 85 Z" fill="var(--color)" stroke="#000" stroke-width="8"/><path d="M25 50 L60 25 L80 50" stroke="#fff" stroke-width="6" fill="none"/></svg>`,
+                3: `<svg viewBox="0 0 100 100"><path d="M10 50 L60 15 L90 50 L60 85 Z" fill="var(--color)" stroke="#000" stroke-width="8"/><line x1="10" y1="50" x2="90" y2="50" stroke="#000" stroke-width="6"/></svg>`,
+                4: `<svg viewBox="0 0 100 100"><path d="M10 50 L60 15 L90 50 L60 85 Z" fill="var(--color)" stroke="#000" stroke-width="8"/><circle cx="58" cy="50" r="15" fill="#000" stroke="#fff" stroke-width="4"/></svg>`
+            },
+            ball: {
+                1: `<svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="42" fill="var(--color)" stroke="#000" stroke-width="8"/><circle cx="50" cy="50" r="26" fill="none" stroke="#fff" stroke-width="6"/></svg>`,
+                2: `<svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="42" fill="var(--color)" stroke="#000" stroke-width="8"/><path d="M15 30 L85 30 M8 50 L92 50" stroke="#fff" stroke-width="6"/></svg>`,
+                3: `<svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="42" fill="var(--color)" stroke="#000" stroke-width="8"/><path d="M50 8 C25 25, 25 75, 50 92 Z" fill="#fff" stroke="#000" stroke-width="5"/></svg>`,
+                4: `<svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="42" fill="var(--color)" stroke="#000" stroke-width="8"/><polygon points="50,12 83,78 17,78" fill="#fff" stroke="#000" stroke-width="6"/></svg>`
+            },
+            spider: {
+                1: `<svg viewBox="0 0 100 100"><rect x="35" y="25" width="45" height="38" fill="var(--color)" stroke="#000" stroke-width="8" rx="8"/><path d="M40 63 L30 82 L20 80 M52 63 L45 85 L35 83" stroke="#000" stroke-width="8" fill="none"/></svg>`,
+                2: `<svg viewBox="0 0 100 100"><path d="M30 25 C30 15, 75 15, 75 25 Z" fill="var(--color)" stroke="#000" stroke-width="8"/><path d="M40 60 L32 82 L22 80" stroke="#000" stroke-width="8" fill="none"/></svg>`,
+                3: `<svg viewBox="0 0 100 100"><rect x="30" y="22" width="48" height="42" fill="var(--color)" stroke="#000" stroke-width="8" rx="4"/><path d="M38 64 L28 84 L18 82" stroke="#000" stroke-width="8" fill="none"/></svg>`,
+                4: `<svg viewBox="0 0 100 100"><path d="M30 40 L55 15 L82 40 Z" fill="var(--color)" stroke="#000" stroke-width="8"/><path d="M38 64 L30 84 L20 82" stroke="#000" stroke-width="8" fill="none"/></svg>`
+            }
+        };
+
+        // GESTION ETAT DU GARAGE
+        const garageState = { mode: 'cube', design: 1, color: '#2ed573' };
+        const colorMap = { red: '#ff4757', orange: '#ffa502', yellow: '#ffd43b', green: '#2ed573', blue: '#1e90ff', indigo: '#5352ed', violet: '#a55eea' };
+
+        function updatePreview() {
+            const holder = document.getElementById('previewVehicle');
+            holder.innerHTML = svgTemplates[garageState.mode][garageState.design];
+            holder.style.setProperty('--color', garageState.color);
+        }
+
+        // ... [Reste de la logique d'affichage intacte] ...
+        function renderDesigns() {
+            const grid = document.getElementById('designsGrid');
+            grid.innerHTML = '';
+            for (let i = 1; i <= 4; i++) {
+                const card = document.createElement('div');
+                card.className = 'design-card';
+                if (i === garageState.design) card.classList.add('selected');
+                card.innerHTML = svgTemplates[garageState.mode][i];
+                card.style.setProperty('--color', garageState.color);
+                grid.appendChild(card);
+
+                card.addEventListener('click', () => {
+                    playClickSFX();
+                    garageState.design = i;
+                    document.querySelectorAll('.design-card').forEach(c => c.classList.remove('selected'));
+                    card.classList.add('selected');
+                    updatePreview();
+                });
+            }
+        }
+
+        document.querySelectorAll('.mode-tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                playClickSFX();
+                document.querySelectorAll('.mode-tab').forEach(t => t.classList.remove('active'));
+                tab.classList.add('active');
+                garageState.mode = tab.dataset.mode;
+                garageState.design = 1;
+                renderDesigns();
+                updatePreview();
+            });
+        });
+
+        document.querySelectorAll('.color-palette .color-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                playClickSFX();
+                document.querySelectorAll('.color-palette .color-btn').forEach(b => b.classList.remove('selected'));
+                btn.classList.add('selected');
+                garageState.color = colorMap[btn.dataset.color];
+                updatePreview();
+                renderDesigns();
+            });
+        });
+
+        // ===== SYSTEME DETECTION GAMEPAD =====
+        let activeGamepadIndex = null;
+        let assignedJumpButton = 0; 
+        let isWaitingForInput = false;
+
+        const toast = document.getElementById('gamepadToast');
+        const gName = document.getElementById('gamepadName');
+        const sDot = document.getElementById('statusDot');
+        const sText = document.getElementById('statusText');
+        const remapBtn = document.getElementById('remapJumpBtn');
+
+        window.addEventListener("gamepadconnected", (e) => {
+            activeGamepadIndex = e.gamepad.index;
+            gName.textContent = e.gamepad.id.substring(0, 25) + "...";
+            sDot.className = "status-dot connected";
+            sText.textContent = "CONNECTED";
+            sText.style.color = "#38ef7d";
+            toast.classList.add('show');
+            setTimeout(() => toast.classList.remove('show'), 3000);
+        });
+
+        window.addEventListener("gamepaddisconnected", (e) => {
+            if(activeGamepadIndex === e.gamepad.index) {
+                activeGamepadIndex = null;
+                gName.textContent = "Aucune manette trouvée";
+                sDot.className = "status-dot";
+                sText.textContent = "OFFLINE";
+                sText.style.color = "#ff4757";
+            }
+        });
+
+        function pollGamepad() {
+            if (activeGamepadIndex !== null) {
+                const gamepads = navigator.getGamepads();
+                const gp = gamepads[activeGamepadIndex];
+                if (gp) {
+                    if (isWaitingForInput) {
+                        for (let i = 0; i < gp.buttons.length; i++) {
+                            if (gp.buttons[i].pressed) {
+                                assignedJumpButton = i;
+                                remapBtn.textContent = `Bouton assigné : Bouton ${i}`;
+                                remapBtn.classList.remove('waiting');
+                                isWaitingForInput = false;
+                                break;
+                            }
+                        }
+                    } else {
+                        if (gp.buttons[assignedJumpButton].pressed) {
+                            console.log("SAUT DU VEHICULE DÉTECTÉ via Manette !");
+                        }
+                    }
+                }
+            }
+            requestAnimationFrame(pollGamepad);
+        }
+
+        remapBtn.addEventListener('click', () => {
+            playClickSFX();
+            if (activeGamepadIndex === null) {
+                alert("Connecte une manette d'abord !");
+                return;
+            }
+            isWaitingForInput = true;
+            remapBtn.textContent = "Appuie sur une touche de ta manette...";
+            remapBtn.classList.add('waiting');
+        });
+
+        remapBtn.textContent = `Bouton actuel : Bouton ${assignedJumpButton} (A/Cross)`;
+        pollGamepad();
+
+        // ===== LOGIQUE SLIDERS AUDIO =====
+        const musicSlider = document.getElementById('musicSlider');
+        const musicValue = document.getElementById('musicValue');
+        musicSlider.addEventListener('input', (e) => {
+            const vol = e.target.value;
+            musicValue.textContent = vol + '%';
+            if (menuMusic) menuMusic.volume = vol / 100;
+        });
+
+        const sfxSlider = document.getElementById('sfxSlider');
+        const sfxValue = document.getElementById('sfxValue');
+        sfxSlider.addEventListener('input', (e) => {
+            const vol = e.target.value;
+            sfxValue.textContent = vol + '%';
+            if (uiClickSound) uiClickSound.volume = vol / 100;
+        });
+
+        function setupButtonGroup(groupId) {
+            const group = document.getElementById(groupId);
+            group.querySelectorAll('.group-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    playClickSFX();
+                    group.querySelectorAll('.group-btn').forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    if (groupId === 'screenGroup') {
+                        if (btn.dataset.value === 'fullscreen') {
+                            document.documentElement.requestFullscreen().catch(() => {});
+                        } else if (document.fullscreenElement) {
+                            document.exitFullscreen();
+                        }
+                    }
+                });
+            });
+        }
+        setupButtonGroup('qualityGroup');
+        setupButtonGroup('screenGroup');
+
+        renderDesigns();
+        updatePreview();
+    </script>
+</body>
+</html>
